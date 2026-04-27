@@ -1,12 +1,9 @@
-import Cal, { getCalApi } from '@calcom/embed-react'
-import { useEffect } from 'react'
+import { getCalApi } from '@calcom/embed-react'
+import { useEffect, useRef } from 'react'
 import { CAL_LINK, CAL_NAMESPACE } from '../config'
-import { buildAttributedBookingUrl, getAttributionParams } from '../lib/attribution'
 
 export function LandingPage() {
-  const attributionParams =
-    typeof window !== 'undefined' ? getAttributionParams(window.location.search) : {}
-  const attributedCalLink = buildAttributedBookingUrl(CAL_LINK, attributionParams)
+  const calEmbedRef = useRef(null)
 
   const hasValidCalEmbed = !CAL_LINK.includes('replace-with-your-link') &&
     !CAL_NAMESPACE.includes('replace-with-your-namespace')
@@ -16,8 +13,17 @@ export function LandingPage() {
       return
     }
 
+    const embedContainer = calEmbedRef.current
+    if (!embedContainer) {
+      return
+    }
+
     ;(async function initCalEmbed() {
       const cal = await getCalApi({ namespace: CAL_NAMESPACE })
+      window.Cal = window.Cal || {}
+      window.Cal.config = window.Cal.config || {}
+      window.Cal.config.forwardQueryParams = true
+
       cal('ui', {
         theme: 'dark',
         cssVarsPerTheme: {
@@ -26,6 +32,17 @@ export function LandingPage() {
         },
         hideEventTypeDetails: true,
         layout: 'month_view',
+      })
+
+      embedContainer.innerHTML = ''
+      cal('inline', {
+        elementOrSelector: embedContainer,
+        calLink: CAL_LINK,
+        config: {
+          layout: 'month_view',
+          useSlotsViewOnSmallScreen: true,
+          theme: 'dark',
+        },
       })
     })()
   }, [hasValidCalEmbed])
@@ -307,16 +324,10 @@ export function LandingPage() {
 
           {hasValidCalEmbed ? (
             <div className="cal-embed-shell">
-              <Cal
-                namespace={CAL_NAMESPACE}
-                calLink={attributedCalLink}
+              <div
+                ref={calEmbedRef}
                 className="cal-embed"
                 style={{ width: '100%', height: '100%', overflow: 'hidden', background: 'transparent' }}
-                config={{
-                  layout: 'month_view',
-                  useSlotsViewOnSmallScreen: true,
-                  theme: 'dark',
-                }}
               />
             </div>
           ) : (
