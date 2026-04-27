@@ -1,8 +1,13 @@
 import Cal, { getCalApi } from '@calcom/embed-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { CAL_LINK, CAL_NAMESPACE } from '../config'
+import { buildAttributedBookingUrl, getAttributionParams } from '../lib/attribution'
 
 export function LandingPage() {
+  const attributionParams =
+    typeof window !== 'undefined' ? getAttributionParams(window.location.search) : {}
+  const attributedCalLink = buildAttributedBookingUrl(CAL_LINK, attributionParams)
+
   const hasValidCalEmbed = !CAL_LINK.includes('replace-with-your-link') &&
     !CAL_NAMESPACE.includes('replace-with-your-namespace')
 
@@ -304,14 +309,13 @@ export function LandingPage() {
             <div className="cal-embed-shell">
               <Cal
                 namespace={CAL_NAMESPACE}
-                calLink={CAL_LINK}
+                calLink={attributedCalLink}
                 className="cal-embed"
                 style={{ width: '100%', height: '100%', overflow: 'hidden', background: 'transparent' }}
                 config={{
                   layout: 'month_view',
                   useSlotsViewOnSmallScreen: true,
                   theme: 'dark',
-                  forwardQueryParams: true,
                 }}
               />
             </div>
